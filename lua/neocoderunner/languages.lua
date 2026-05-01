@@ -1,7 +1,6 @@
 local sep = vim.o.shell:lower():find("powershell") and " ; " or " && "
 local exe_ext = jit.os == "Windows" and ".exe" or ""
 
-
 return {
     c = {
         extensions = { "c", "h" },

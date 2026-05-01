@@ -3,7 +3,6 @@ local languages = require("neocoderunner.languages")
 
 local tempfile_name = "neocoderunner_tempfile"
 
-
 local function get_run_command()
     local fi = utils.get_current_file_info()
     local lang = languages[fi.type]
@@ -21,79 +20,126 @@ end
 
 --- Adds the code snippet to a temp file and returns the command needed to run this temp file
 local function get_code_snippet_run_command()
-	local ft = vim.bo.filetype
-	local runner = languages[ft].runner
-	local tempfile_path = vim.fn.getcwd() .. "/" .. tempfile_name .. "." .. languages[ft].extensions[1]
+    local ft = vim.bo.filetype
+    local runner = languages[ft].runner
+    local tempfile_path = vim.fn.getcwd()
+        .. "/"
+        .. tempfile_name
+        .. "."
+        .. languages[ft].extensions[1]
 
-	-- Get highlighted selection
-	local selection = utils.get_visual_selection()
-	if not selection or selection == "" then
-		vim.notify("No text selected.", vim.log.levels.WARN)
-		return
-	end
-	-- Write selection to file
-	local file, err = io.open(tempfile_path, "w")
-	if not file then
-		vim.notify("Failed to create temp file: " .. err, vim.log.levels.ERROR)
-		return
-	end
-	-- Get command to run temp file
-	return runner and runner(tempfile_path, tempfile_name)
+    -- Get highlighted selection
+    local selection = utils.get_visual_selection()
+    if not selection or selection == "" then
+        vim.notify("No text selected.", vim.log.levels.WARN)
+        return
+    end
+    -- Write selection to file
+    local file, err = io.open(tempfile_path, "w")
+    if not file then
+        vim.notify("Failed to create temp file: " .. err, vim.log.levels.ERROR)
+        return
+    end
+    -- Get command to run temp file
+    return runner and runner(tempfile_path, tempfile_name)
 end
 
 --- Deletes any temp files generated to run the code snippets
 local function delete_temp_files()
-	local cwd = vim.fn.getcwd()
+    local cwd = vim.fn.getcwd()
 
-	for name, type in vim.fs.dir(cwd) do
-		-- only delete regular files
-		if type == "file" and name:find(tempfile_name, 1, true) then
-			local path = cwd .. "/" .. name
-			local ok, err = os.remove(path)
-			if not ok then
-				vim.notify("Failed to delete file: " .. path .. " (" .. tostring(err) .. ")", vim.log.levels.WARN)
-			end
-		end
-	end
+    for name, type in vim.fs.dir(cwd) do
+        -- only delete regular files
+        if type == "file" and name:find(tempfile_name, 1, true) then
+            local path = cwd .. "/" .. name
+            local ok, err = os.remove(path)
+            if not ok then
+                vim.notify(
+                    "Failed to delete file: " .. path .. " (" .. tostring(err) .. ")",
+                    vim.log.levels.WARN
+                )
+            end
+        end
+    end
 end
 
-
 local function run(run_cmd)
+    local config = require("neocoderunner.config")
+    local pos = config.terminal_position or "bottom"
+    local footprint = config.terminal_footprint or 0.33
 
     if not run_cmd then
         vim.notify("No run command found for this filetype", vim.log.levels.WARN)
         return
     end
 
-    -- Open a horizontal split with a new empty buffer
-    vim.cmd("split | enew")
+    local file_dir = vim.fn.expand("%:p:h")
 
-    -- Optional: set the terminal window height
-    vim.cmd("resize 15")
+    if pos == "floating" then
+        local curr_win = vim.api.nvim_get_current_win()
+        local win_width = vim.api.nvim_win_get_width(curr_win)
+        local win_height = vim.api.nvim_win_get_height(curr_win)
 
-    -- Open terminal and run the command
+        local width = math.ceil(win_width * 0.8)
+        local height = math.ceil(win_height * 0.7)
+        local row = math.ceil((win_height - height) / 2)
+        local col = math.ceil((win_width - width) / 2)
+
+        local buf = vim.api.nvim_create_buf(false, true)
+        local win = vim.api.nvim_open_win(buf, true, {
+            relative = "win",
+            win = curr_win,
+            width = width,
+            height = height,
+            row = row,
+            col = col,
+            style = "minimal",
+            border = "rounded",
+        })
+        vim.api.nvim_set_option_value("winhl", "Normal:Normal,FloatBorder:Normal", { win = win })
+    else
+        local parent_width = vim.api.nvim_win_get_width(0)
+        local parent_height = vim.api.nvim_win_get_height(0)
+
+        local commands = {
+            bottom = "split",
+            top = "leftabove split",
+            left = "leftabove vsplit",
+            right = "vsplit",
+        }
+
+        vim.cmd(commands[pos] or "split")
+
+        if pos == "left" or pos == "right" then
+            local target_width = math.ceil(parent_width * footprint)
+            vim.cmd("vertical resize " .. target_width)
+        else
+            local target_height = math.ceil(parent_height * footprint)
+            vim.cmd("resize " .. target_height)
+        end
+        vim.cmd("enew")
+    end
+
     vim.fn.termopen(run_cmd, {
+        cwd = file_dir,
         on_exit = function(_, exit_code, _)
             vim.notify("Process exited with code: " .. exit_code, vim.log.levels.INFO)
         end,
     })
-
-    -- Immediately enter insert mode so the terminal is interactive
     vim.cmd("startinsert")
 end
-
 
 local M = {}
 
 M.run_current_file = function()
-	local run_cmd = get_run_command()
-	run(run_cmd)
+    local run_cmd = get_run_command()
+    run(run_cmd)
 end
 
 M.run_code_snippet = function()
-	local run_cmd = get_code_snippet_run_command()
-	run(run_cmd)
-	delete_temp_files()
+    local run_cmd = get_code_snippet_run_command()
+    run(run_cmd)
+    delete_temp_files()
 end
 
 return M
