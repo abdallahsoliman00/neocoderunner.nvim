@@ -11,7 +11,7 @@ Simply run the command `:RunCurrentFile` and the file compiles, executes and ope
 preventing the hassle of opening the terminal, compiling and running.
 
 ## Requirements
-Here are the commands executed for each language, use them to find what you need to run each:
+Here are the commands executed for each supported language, use them to find what you need to run each:
 ```
 C
 gcc -o ${fileName} ${fullpath} && ./${fileName}
@@ -77,4 +77,6 @@ use({
 ## Contributing
 I haven't yet implemented all lanuages, but the most commonly used ones (that can easily be run) are supported.
 
-See [this file](lua/neocoderunner/languages) or the [Requirements](#Requirements) section for more.
+See [this file](lua/neocoderunner/languages.lua) or the [Requirements](#Requirements) section for more.
+
+If there's a language I missed, or a feature to add, feel free to open a pull request.
