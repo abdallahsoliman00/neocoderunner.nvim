@@ -8,7 +8,7 @@ A lightweight plugin to help run quick test pieces of code, inspired by VSCode's
 This is a plugin that should be used when you quickly want to test a small piece of code very quickly.
 
 Simply run the command `:RunCurrentFile` and the file compiles, executes and opens in a new buffer,
-preventing the hassle of opening the terminal, compiling and running.
+preventing the hassle of opening the terminal, compiling, and running.
 
 ## Requirements
 Here are the commands executed for each supported language, use them to find what you need to run each:
@@ -33,8 +33,14 @@ node ${fullpath}
 
 Typescript
 npx tsx ${fullpath}
+
+Perl
+perl ${fullpath}
+
+Go
+go run ${fullpath}
 ```
-**Note these aren't the actual commands that are run, rather only a repreesentation of the commands behind the scenes. The actual commands depend on teh device being used.
+*Note these aren't the actual commands that are run, rather only a representation of the commands behind the scenes. The actual commands depend on the device being used.
 
 
 ## Setup
@@ -43,7 +49,7 @@ npx tsx ${fullpath}
 {
     "abdallahsoliman00/neocoderunner.nvim",
     opts = {
-        -- Easy run with keymap (optinal)
+        -- Easy run with keymap (optional)
         vim.keymap.set("n", "<C-S-N>", ":RunCurrentFile<CR>", { silent = true, noremap = true } )
     }
 }
@@ -55,7 +61,7 @@ use({
     "abdallahsoliman00/neocoderunner.nvim",
     config = function()
         require("neocoderunner").setup({
-            -- Easy run with keymap (optinal)
+            -- Easy run with keymap (optional)
             vim.keymap.set("n", "<C-S-N>", ":RunCurrentFile<CR>", { silent = true, noremap = true } )
         })
     end
@@ -75,7 +81,7 @@ use({
 ```
 
 ## Contributing
-I haven't yet implemented all lanuages, but the most commonly used ones (that can easily be run) are supported.
+I haven't yet added runner commands for all languages, but the most commonly used ones (that don't have a complicated build system) are supported.
 
 See [this file](lua/neocoderunner/languages.lua) or the [Requirements](#Requirements) section for more.
 

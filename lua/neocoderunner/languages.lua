@@ -44,4 +44,16 @@ return {
             return "npx tsx " .. fullpath
         end,
     },
+    perl = {
+        extensions = { "pl" },
+        runner = function(fullpath)
+            return "perl " .. fullpath
+        end,
+    },
+    go = {
+        extensions = { "go" },
+        runner = function(fullpath)
+            return "go run " .. fullpath
+        end,
+    },
 }
