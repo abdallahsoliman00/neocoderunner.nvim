@@ -73,7 +73,7 @@ use({
 ```lua
 {
     -- Position of the neocoderunner terminal
-    terminal_position = "floating",    -- other options include "top", "floating", "left", "right"
+    terminal_position = "bottom",    -- other options include "top", "floating", "left", "right"
 
     -- How much of the existing window the neocoderunner terminal will occupy
     terminal_footprint = 0.33,
