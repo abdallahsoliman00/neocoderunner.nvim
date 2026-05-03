@@ -1,5 +1,6 @@
 local utils = require("neocoderunner.utils")
 local languages = require("neocoderunner.languages")
+local config = require("neocoderunner").config
 
 local tempfile_name = "neocoderunner_tempfile"
 
@@ -64,7 +65,6 @@ local function delete_temp_files()
 end
 
 local function run(run_cmd)
-    local config = require("neocoderunner.config")
     local pos = config.terminal_position or "bottom"
     local footprint = config.terminal_footprint or 0.33
 
