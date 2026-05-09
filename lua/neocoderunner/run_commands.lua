@@ -4,6 +4,8 @@ local config = require("neocoderunner").config
 
 local tempfile_name = "neocoderunner_tempfile"
 
+--- Gets the run command for the current file
+---@return string | nil
 local function get_run_command()
     local fi = utils.get_current_file_info()
     local lang = languages[fi.type]
@@ -20,6 +22,7 @@ local function get_run_command()
 end
 
 --- Adds the code snippet to a temp file and returns the command needed to run this temp file
+---@return string | nil
 local function get_code_snippet_run_command()
     local ft = vim.bo.filetype
     local runner = languages[ft].runner
@@ -33,14 +36,16 @@ local function get_code_snippet_run_command()
     local selection = utils.get_visual_selection()
     if not selection or selection == "" then
         vim.notify("No text selected.", vim.log.levels.WARN)
-        return
+        return nil
     end
     -- Write selection to file
     local file, err = io.open(tempfile_path, "w")
     if not file then
         vim.notify("Failed to create temp file: " .. err, vim.log.levels.ERROR)
-        return
+        return nil
     end
+    file:write(selection)
+    file:close()
     -- Get command to run temp file
     return runner and runner(tempfile_path, tempfile_name)
 end
@@ -64,7 +69,10 @@ local function delete_temp_files()
     end
 end
 
-local function run(run_cmd)
+--- Takes a command string and runs the command in a terminal in a spilt
+---@param run_cmd string Command to run
+---@param on_exit function A function to call upon exit
+local function run(run_cmd, on_exit)
     local pos = config.terminal_position or "bottom"
     local footprint = config.terminal_footprint or 0.33
 
@@ -124,6 +132,7 @@ local function run(run_cmd)
         cwd = file_dir,
         on_exit = function(_, exit_code, _)
             vim.notify("Process exited with code: " .. exit_code, vim.log.levels.INFO)
+            if on_exit then on_exit() end
         end,
     })
     vim.cmd("startinsert")
@@ -133,13 +142,16 @@ local M = {}
 
 M.run_current_file = function()
     local run_cmd = get_run_command()
-    run(run_cmd)
+    if run_cmd then
+        run(run_cmd, function() end)
+    end
 end
 
 M.run_code_snippet = function()
     local run_cmd = get_code_snippet_run_command()
-    run(run_cmd)
-    delete_temp_files()
+    if run_cmd then
+        run(run_cmd, function() delete_temp_files() end)
+    end
 end
 
 return M

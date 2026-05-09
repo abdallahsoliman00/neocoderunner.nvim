@@ -1,15 +1,20 @@
 local M = {}
 
 M.get_visual_selection = function()
-    -- Save the current register content
-    local saved_reg = vim.fn.getreg("v")
-    -- Yank the visual selection into register 'v'
-    vim.cmd('noau normal! "vy"')
-    -- Retrieve the yanked text
-    local selection = vim.fn.getreg("v")
-    -- Restore the register
-    vim.fn.setreg("v", saved_reg)
-    return selection
+    local start_pos = vim.fn.getpos("'<")
+    local end_pos   = vim.fn.getpos("'>")
+
+    local start_line, start_col = start_pos[2], start_pos[3]
+    local end_line,   end_col   = end_pos[2],   end_pos[3]
+
+    local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+    if #lines == 0 then return "" end
+
+    -- Trim to the exact column range
+    lines[#lines] = lines[#lines]:sub(1, end_col)
+    lines[1]      = lines[1]:sub(start_col)
+
+    return table.concat(lines, "\n")
 end
 
 --- Returns a table with properties of the current file:

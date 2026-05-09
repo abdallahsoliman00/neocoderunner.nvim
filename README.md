@@ -7,8 +7,18 @@ A lightweight plugin to help run quick test pieces of code, inspired by VSCode's
 ## Concept
 This is a plugin that should be used when you quickly want to test a small piece of code very quickly.
 
-Simply run the command `:RunCurrentFile` and the file compiles, executes and opens in a new buffer,
-preventing the hassle of opening the terminal, compiling, and running.
+The plugin provides two commands:
+- `:RunCurrentFile`
+- `:RunCodeSnippet`
+
+In the case of executing `:RunCurrentFile`, simply run the command and the file compiles (if needed),
+executes and opens in a new buffer, preventing the hassle of opening the terminal, compiling, and running.
+
+In the case of executing `:RunCodeSnippet`, ensure the commmand line is clear beforehand.
+The command creates a new temporary file, completes the same steps for the command above,
+and deletes the temporary files created when the code finishes execution.
+
+It is recommended to remap both these commands to a kemap to streamline the process of using them. (See the [Setup](#setup) section.)
 
 ## Requirements
 Here are the commands executed for each supported language, use them to find what you need to run each:
@@ -51,6 +61,7 @@ go run ${fullpath}
     opts = {
         -- Easy run with keymap (optional)
         vim.keymap.set("n", "<C-S-N>", ":RunCurrentFile<CR>", { silent = true, noremap = true } )
+        vim.keymap.set('v', '<C-S-n>', ':<C-U>RunCodeSnippet<CR>', opts)
     }
 }
 ```
@@ -63,6 +74,7 @@ use({
         require("neocoderunner").setup({
             -- Easy run with keymap (optional)
             vim.keymap.set("n", "<C-S-N>", ":RunCurrentFile<CR>", { silent = true, noremap = true } )
+            vim.keymap.set('v', '<C-S-n>', ':<C-U>RunCodeSnippet<CR>', opts)
         })
     end
 })
