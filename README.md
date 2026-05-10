@@ -1,24 +1,20 @@
 # neocoderunner.nvim
 
-A lightweight plugin to help run quick test pieces of code, inspired by VSCode's code runner.
+A lightweight plugin to help run test pieces of code, for dirty drafting or quick prototyping, without leaving your editor.
+
+(Inspired by VSCode's code runner.)
 
 ![Demo](media/neocoderunner.gif)
 
-## Concept
+## Overview
 This is a plugin that should be used when you quickly want to test a small piece of code very quickly.
 
 The plugin provides two commands:
-- `:RunCurrentFile`
-- `:RunCodeSnippet`
+- `:RunCurrentFile` -  Compiles (if needed) and runs the current file, displaying output in a new buffer.
+- `:RunCodeSnippet` - Runs a visually selected snippet by writing it to a temporary file, executing it, then cleaning up automatically.
 
-In the case of executing `:RunCurrentFile`, simply run the command and the file compiles (if needed),
-executes and opens in a new buffer, preventing the hassle of opening the terminal, compiling, and running.
+Both commands are best mapped to keybinds for the smoothest workflow. (See the [Setup](#setup) section.)
 
-In the case of executing `:RunCodeSnippet`, ensure the commmand line is clear beforehand.
-The command creates a new temporary file, completes the same steps for the command above,
-and deletes the temporary files created when the code finishes execution.
-
-It is recommended to remap both these commands to a kemap to streamline the process of using them. (See the [Setup](#setup) section.)
 
 ## Requirements
 Here are the commands executed for each supported language, use them to find what you need to run each:
@@ -59,10 +55,14 @@ go run ${fullpath}
 {
     "abdallahsoliman00/neocoderunner.nvim",
     opts = {
+        terminal_position = "bottom",
+        terminal_footprint = 0.33,
+    },
+    keys = {
         -- Easy run with keymap (optional)
-        vim.keymap.set("n", "<C-S-N>", ":RunCurrentFile<CR>", { silent = true, noremap = true } )
-        vim.keymap.set('v', '<C-S-n>', ':<C-U>RunCodeSnippet<CR>', opts)
-    }
+        { "<C-S-N>", ":RunCurrentFile<CR>", mode = "n", silent = true, noremap = true },
+        { "<C-S-n>", ":<C-U>RunCodeSnippet<CR>", mode = "v", silent = true, noremap = true },
+    },
 }
 ```
 
@@ -72,10 +72,12 @@ use({
     "abdallahsoliman00/neocoderunner.nvim",
     config = function()
         require("neocoderunner").setup({
-            -- Easy run with keymap (optional)
-            vim.keymap.set("n", "<C-S-N>", ":RunCurrentFile<CR>", { silent = true, noremap = true } )
-            vim.keymap.set('v', '<C-S-n>', ':<C-U>RunCodeSnippet<CR>', opts)
+            terminal_position = "bottom",
+            terminal_footprint = 0.33,
         })
+        -- Easy run with keymap (optional)
+        vim.keymap.set("n", "<C-S-N>", ":RunCurrentFile<CR>", { silent = true, noremap = true })
+        vim.keymap.set("v", "<C-S-n>", ":<C-U>RunCodeSnippet<CR>", { silent = true, noremap = true })
     end
 })
 ```
