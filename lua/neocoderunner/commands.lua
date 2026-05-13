@@ -9,7 +9,7 @@ M.setup = function()
 
     vim.api.nvim_create_user_command("RunCodeSnippet", function()
         run_commands.run_code_snippet()
-    end, { nargs = 0, desc = "Runs the highlighted code in a split." })
+    end, { nargs = 0, range = true, desc = "Runs the highlighted code in a split." })
 end
 
 return M
