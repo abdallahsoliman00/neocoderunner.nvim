@@ -58,6 +58,7 @@ return {
     },
     php = {
         extensions = { "php" },
+        headers = { "<?php" },
         runner = function(fullpath)
             return "php " .. fullpath
         end,
