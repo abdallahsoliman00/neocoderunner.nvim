@@ -44,6 +44,17 @@ local function get_code_snippet_run_command()
         vim.notify("Failed to create temp file: " .. err, vim.log.levels.ERROR)
         return nil
     end
+
+    -- Verify that the language has headers defined
+    if languages[ft].headers then
+        for _, header in pairs(languages[ft].headers) do
+            -- If the header is not already in the selection, add it to the top of the file
+            if not selection:find(header, 1, true) then
+                file:write(header .. "\n")
+            end
+        end
+    end
+
     file:write(selection)
     file:close()
     -- Get command to run temp file
@@ -132,7 +143,9 @@ local function run(run_cmd, on_exit)
         cwd = file_dir,
         on_exit = function(_, exit_code, _)
             vim.notify("Process exited with code: " .. exit_code, vim.log.levels.INFO)
-            if on_exit then on_exit() end
+            if on_exit then
+                on_exit()
+            end
         end,
     })
     vim.cmd("startinsert")
@@ -150,7 +163,9 @@ end
 M.run_code_snippet = function()
     local run_cmd = get_code_snippet_run_command()
     if run_cmd then
-        run(run_cmd, function() delete_temp_files() end)
+        run(run_cmd, function()
+            delete_temp_files()
+        end)
     end
 end
 
