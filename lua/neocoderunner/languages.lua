@@ -56,4 +56,10 @@ return {
             return "go run " .. fullpath
         end,
     },
+    php = {
+        extensions = { "php" },
+        runner = function(fullpath)
+            return "php " .. fullpath
+        end,
+    },
 }
