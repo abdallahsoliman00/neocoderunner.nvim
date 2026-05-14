@@ -110,10 +110,10 @@ local function run(run_cmd, on_exit)
         local parent_height = vim.api.nvim_win_get_height(0)
 
         local commands = {
-            bottom = "split",
+            bottom = "rightbelow split",
             top = "leftabove split",
             left = "leftabove vsplit",
-            right = "vsplit",
+            right = "rightbelow vsplit",
         }
 
         vim.cmd(commands[pos] or "split")
@@ -132,7 +132,9 @@ local function run(run_cmd, on_exit)
         cwd = file_dir,
         on_exit = function(_, exit_code, _)
             vim.notify("Process exited with code: " .. exit_code, vim.log.levels.INFO)
-            if on_exit then on_exit() end
+            if on_exit then
+                on_exit()
+            end
         end,
     })
     vim.cmd("startinsert")
@@ -150,7 +152,9 @@ end
 M.run_code_snippet = function()
     local run_cmd = get_code_snippet_run_command()
     if run_cmd then
-        run(run_cmd, function() delete_temp_files() end)
+        run(run_cmd, function()
+            delete_temp_files()
+        end)
     end
 end
 
