@@ -44,6 +44,17 @@ local function get_code_snippet_run_command()
         vim.notify("Failed to create temp file: " .. err, vim.log.levels.ERROR)
         return nil
     end
+
+    -- Verify that the language has headers defined
+    if languages[ft].headers then
+        for _, header in pairs(languages[ft].headers) do
+            -- If the header is not already in the selection, add it to the top of the file
+            if not selection:find(header, 1, true) then
+                file:write(header .. "\n")
+            end
+        end
+    end
+
     file:write(selection)
     file:close()
     -- Get command to run temp file
