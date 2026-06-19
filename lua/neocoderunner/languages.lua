@@ -23,7 +23,11 @@ return {
     python = {
         extensions = { "py" },
         runner = function(fullpath)
-            return "python -u " .. fullpath
+            if jit.os == "Windows" then
+                return "python -u " .. fullpath
+            else
+                return "python3 -u " .. fullpath
+            end
         end,
     },
     rust = {

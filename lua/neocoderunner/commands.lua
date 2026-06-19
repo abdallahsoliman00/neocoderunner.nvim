@@ -17,7 +17,7 @@ M.setup = function()
                 return
             end
 
-            run_commands.run_code_snippet(snippet)
+            run_commands.run_code_snippet()
             return
         end
 
