@@ -67,4 +67,22 @@ return {
             return "php " .. fullpath
         end,
     },
+    zig = {
+        extensions = { "zig" },
+        runner = function(fullpath)
+            return "zig run " .. fullpath
+        end
+    },
+    -- This is left empty on purpose for the user to define in the runners.josn file
+    global = {
+        runner = function()
+            return ""
+        end
+    },
+    -- Don't forget to add new languages to the order table below
+    order = {
+        "global", "c", "cpp", "lua", "python", "rust",
+        "javascript", "typescript", "perl", "go", "php",
+        "zig",
+    }
 }
