@@ -8,7 +8,7 @@ local M = {}
 --- Gets the run command for the current file
 ---@return string | nil
 M.get_run_command = function()
-    local fi = M.get_current_file_info()
+    local fi = utils.get_current_file_info()
     local lang = languages[fi.type]
 
     if not lang or not lang.runner then
@@ -26,12 +26,20 @@ end
 ---@return string | nil
 M.get_code_snippet_run_command = function()
     local ft = vim.bo.filetype
-    local runner = languages[ft].runner
+    local lang = languages[ft]
+    if not lang or not lang.runner then
+        vim.notify(
+            ("No runner configured for filetype: %s"):format(ft or "unknown"),
+            vim.log.levels.WARN
+        )
+        return nil
+    end
+    local runner = lang.runner
     local tempfile_path = vim.fn.getcwd()
         .. "/"
         .. tempfile_name
         .. "."
-        .. languages[ft].extensions[1]
+        .. lang.extensions[1]
 
     -- Get highlighted selection
     local selection = utils.get_visual_selection()
@@ -47,8 +55,8 @@ M.get_code_snippet_run_command = function()
     end
 
     -- Verify that the language has headers defined
-    if languages[ft].headers then
-        for _, header in pairs(languages[ft].headers) do
+    if lang.headers then
+        for _, header in pairs(lang.headers) do
             -- If the header is not already in the selection, add it to the top of the file
             if not selection:find(header, 1, true) then
                 file:write(header .. "\n")

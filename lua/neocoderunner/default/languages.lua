@@ -1,7 +1,10 @@
+require("neocoderunner.types.Language")
+
 local sep = vim.o.shell:lower():find("powershell") and " ; " or " && "
 local exe_ext = jit.os == "Windows" and ".exe" or ""
 
-return {
+---@type Languages
+local languages = {
     c = {
         extensions = { "c", "h" },
         runner = function(fullpath, basename)
@@ -73,7 +76,7 @@ return {
             return "zig run " .. fullpath
         end
     },
-    -- This is left empty on purpose for the user to define in the runners.josn file
+    -- This is left empty on purpose for the user to define in the runners.json file
     global = {
         runner = function()
             return ""
@@ -86,3 +89,5 @@ return {
         "zig",
     }
 }
+
+return languages

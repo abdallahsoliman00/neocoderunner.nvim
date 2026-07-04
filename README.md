@@ -2,6 +2,8 @@
 
 A lightweight plugin to help run test pieces of code, for dirty drafting or quick prototyping, without leaving your editor.
 
+A lightweight plugin to make running your code so much easier.
+
 (Inspired by VSCode's code runner.)
 
 ![Demo](media/neocoderunner.gif)
@@ -45,6 +47,9 @@ perl ${fullpath}
 
 Go
 go run ${fullpath}
+
+Zig
+zig run ${fullpath}
 ```
 *Note these aren't the actual commands that are run, rather only a representation of the commands behind the scenes. The actual commands depend on the device being used.
 

@@ -5,10 +5,24 @@ local M = {}
 
 M.setup = function()
 
-    vim.api.nvim_create_user_command("InitRunnerConfig", function()
-        init_commands.init_ncrunner_file()
+    vim.api.nvim_create_user_command("InitRunnerConfig", function(opts)
+        local arg = opts.fargs[1]
+        local override = false
+        if arg == "o" or arg == "override" then
+            override = true
+        elseif arg ~= nil then
+            vim.notify(
+                "Unknown argument " .. arg .. ". To override the currently existing runners.json file, please pass 'o' or 'override' as an argument to the command.",
+                vim.log.levels.WARN
+            )
+            return
+        end
+        init_commands.init_ncrunner_file(override)
     end, {
-        nargs = 0,
+        nargs = "?",
+        complete = function()
+            return { "override" }
+        end,
         desc = "Initialises the .ncrunner directory with a runners.json containing the default run command for each filetype.",
     })
 
