@@ -1,4 +1,4 @@
-local default_config = require("neocoderunner.config")
+local default_config = require("neocoderunner.default.config")
 
 local M = {}
 

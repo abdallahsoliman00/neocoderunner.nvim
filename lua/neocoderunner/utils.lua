@@ -5,7 +5,7 @@ local function build_display_cmd(run_cmd, cwd)
         local shell = vim.o.shell:lower()
 
         if shell:find("powershell") or shell:find("pwsh") then
-            -- PowerShell: ';' separates statements
+            -- PowerShell
             return string.format(
                 "Write-Output 'CWD: %s'; Write-Output 'Running: %s'; Write-Output ''; %s",
                 cwd:gsub("'", "''"),
@@ -13,7 +13,7 @@ local function build_display_cmd(run_cmd, cwd)
                 run_cmd
             )
         else
-            -- cmd.exe: '&' separates commands, no embedded newlines
+            -- cmd.exe
             return string.format(
                 "echo CWD: %s & echo Running: %s & echo '' & %s",
                 cwd,

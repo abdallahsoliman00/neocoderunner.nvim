@@ -1,5 +1,5 @@
-local run_commands = require("neocoderunner.default.run_commands")
-local init_commands = require("neocoderunner.custom.init_runners")
+local run_commands = require("neocoderunner.runner")
+local init_commands = require("neocoderunner.custom.init_json")
 
 local M = {}
 
