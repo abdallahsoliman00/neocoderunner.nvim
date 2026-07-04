@@ -1,3 +1,5 @@
+require("neocoderunner.types.Runner")
+
 local languages = require("neocoderunner.default.languages")
 local utils = require("neocoderunner.utils")
 
@@ -6,7 +8,7 @@ local tempfile_name = "neocoderunner_tempfile"
 local M = {}
 
 --- Gets the run command for the current file
----@return string | nil
+---@return Runner | nil
 M.get_run_command = function()
     local fi = utils.get_current_file_info()
     local lang = languages[fi.type]
@@ -19,7 +21,7 @@ M.get_run_command = function()
         return nil
     end
 
-    return lang.runner(fi.fullpath, fi.basename)
+    return utils.normalise_runner(lang.runner(fi.fullpath, fi.basename))
 end
 
 --- Adds the code snippet to a temp file and returns the command needed to run this temp file

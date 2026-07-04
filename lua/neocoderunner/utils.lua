@@ -7,18 +7,14 @@ local function build_display_cmd(run_cmd, cwd)
         if shell:find("powershell") or shell:find("pwsh") then
             -- PowerShell
             return string.format(
-                "Write-Output 'CWD: %s'; Write-Output 'Running: %s'; Write-Output ''; %s",
-                cwd:gsub("'", "''"),
-                run_cmd:gsub("'", "''"),
-                run_cmd
+                "Write-Output 'cd > %s'; Write-Output '> %s'; Write-Output ''; %s",
+                cwd:gsub("'", "''"), run_cmd:gsub("'", "''"), run_cmd
             )
         else
             -- cmd.exe
             return string.format(
-                "echo CWD: %s & echo Running: %s & echo '' & %s",
-                cwd,
-                run_cmd,
-                run_cmd
+                "echo cd > %s & echo > %s & echo '' & %s",
+                cwd, run_cmd, run_cmd
             )
         end
     else
@@ -27,9 +23,7 @@ local function build_display_cmd(run_cmd, cwd)
         local escaped_cmd = run_cmd:gsub("'", "'\\''")
         return string.format(
             "echo '> cd %s'; echo '> %s'; echo ''; %s",
-            escaped_cwd,
-            escaped_cmd,
-            run_cmd
+            escaped_cwd, escaped_cmd, run_cmd
         )
     end
 end
@@ -176,6 +170,20 @@ end
 M.resolve_placeholders = function(command, replacements)
     local result = command:gsub("%${([%w_]+)}", replacements)
     return result
+end
+
+
+--- Normalises a raw runner entry (string or table) into a Runner
+---@param raw table|string
+---@return Runner
+M.normalise_runner = function(raw)
+    local fileinfo = require("neocoderunner.utils").get_current_file_info()
+    local replacements = { fileName = fileinfo.basename, filePath = fileinfo.relative }
+
+    if type(raw) == "string" then
+        return { build = nil, run = M.resolve_placeholders(raw, replacements) }
+    end
+    return { build = M.resolve_placeholders(raw.build, replacements), run = M.resolve_placeholders(raw.run, replacements) }
 end
 
 return M

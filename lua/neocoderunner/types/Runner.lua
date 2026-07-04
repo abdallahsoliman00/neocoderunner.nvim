@@ -3,3 +3,6 @@
 ---@field build string|nil
 ---@field run string
 
+--- A table of language names each with their corresponding `Runner`
+---@class Runners
+---@field [string] Runner

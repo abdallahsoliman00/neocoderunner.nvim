@@ -27,24 +27,11 @@ local function read_runners_file()
     return data
 end
 
---- Normalizes a raw runner entry (string or table) into a Runner
----@param raw table|string
----@return Runner
-local function normalise_runner(raw)
-    local fileinfo = require("neocoderunner.utils").get_current_file_info()
-    local replacements = { fileName = fileinfo.basename, filePath = fileinfo.relative }
-
-    if type(raw) == "string" then
-        return { build = nil, run = utils.resolve_placeholders(raw, replacements) }
-    end
-    return { build = utils.resolve_placeholders(raw.build, replacements), run = utils.resolve_placeholders(raw.run, replacements) }
-end
-
 
 local M = {}
 
 --- Returns a table of runners by parsing the runners.json command
----@return table<Runner>
+---@return Runners
 M.get_runners = function()
     local data = read_runners_file()
     if data == nil then return {} end
@@ -54,7 +41,7 @@ M.get_runners = function()
     local runners = data.runners ~= nil and data.runners or data
     local out = {}
     for lang, runner in pairs(runners) do
-        out[lang] = normalise_runner(runner)
+        out[lang] = utils.normalise_runner(runner)
     end
 
     return out

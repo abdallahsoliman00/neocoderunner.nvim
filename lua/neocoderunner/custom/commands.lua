@@ -5,12 +5,33 @@ local utils = require("neocoderunner.utils")
 local default = require("neocoderunner.default.commands")
 local parse = require("neocoderunner.custom.parse_commands")
 
+---@param runner string | Runner 
+---@return string | Runner
+local function strip(runner)
+    if type(runner) == "string" then
+        return runner:match("^%s*(.-)%s*$")
+    end
+    return runner
+end
+
 --- Returns the runner for the current filetype from the runners.json
 --- returns nil if no runner is defined
 ---@return Runner | nil
 local function get_runner()
     local f_info = utils.get_current_file_info()
-    return parse.get_runners()[f_info.type]
+    local runners = parse.get_runners()
+
+    -- Check if global exists and return it
+    if runners["global"] ~= nil and strip(runners["global"]) ~= "" then
+        return runners["global"]
+    end
+
+    -- Otherwise return the runner or the default if that also isn't defined
+    if runners[f_info.type] ~= nil and strip(runners[f_info.type]) ~= "" then
+        return runners[f_info.type]
+    else
+        return default.get_run_command()
+    end
 end
 
 local M = {}
