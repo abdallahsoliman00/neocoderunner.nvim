@@ -5,13 +5,33 @@ local utils = require("neocoderunner.utils")
 local default = require("neocoderunner.default.commands")
 local parse = require("neocoderunner.custom.parse_commands")
 
----@param runner string | Runner 
----@return string | Runner
+---@param str string | nil
+---@return string | nil
+local function trim(str)
+    if str == nil then return nil end
+    return (str:match("^%s*(.-)%s*$"))
+end
+
+---@param runner string | Runner | nil
+---@return string | Runner | nil
 local function strip(runner)
+    if runner == nil then return nil end
     if type(runner) == "string" then
-        return runner:match("^%s*(.-)%s*$")
+        return trim(runner)
     end
-    return runner
+    return { build = trim(runner.build), run = trim(runner.run) }
+end
+
+--- Checks if the runner object contains a runnable command
+---@param runner Runner | string | nil
+---@return boolean
+local function runner_empty(runner)
+    if runner == nil then return true end
+    if type(runner) == "string" then
+        return runner == ""
+    else
+        return (runner.build or "") == "" and (runner.run or "") == ""
+    end
 end
 
 --- Returns the runner for the current filetype from the runners.json
@@ -22,7 +42,7 @@ local function get_runner()
     local runners = parse.get_runners()
 
     -- Check if global exists and return it
-    if runners["global"] ~= nil and strip(runners["global"]) ~= "" then
+    if not runner_empty(strip(runners["global"])) then
         return runners["global"]
     end
 
