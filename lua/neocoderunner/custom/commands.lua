@@ -108,12 +108,22 @@ end
 
 --- This gets called by the main user command
 ---@return string | nil
-M.get_current_file_command = function ()
+M.get_current_file_command = function()
     local custom_defined = utils.runners_file_exists() and get_runner() ~= nil
 
     -- If no commands are defined, use the default runners
     if not custom_defined then
-        return default.get_run_command()
+        local default_runner = default.get_run_command()
+        local sep = vim.o.shell:lower():find("powershell") and " ; " or " && "
+        if default_runner ~= nil then
+            if default_runner.build then
+                return default_runner.build .. sep .. default_runner.run
+            else
+                return default_runner.run
+            end
+        else
+            return nil
+        end
     end
 
     return M.get_full_command()

@@ -1,5 +1,9 @@
 local config = require("neocoderunner").config
+local sep = vim.o.shell:lower():find("powershell") and " ; " or " && "
 
+
+---@param run_cmd string
+---@param cwd string
 local function build_display_cmd(run_cmd, cwd)
     if vim.fn.has("win32") == 1 then
         local shell = vim.o.shell:lower()
@@ -7,13 +11,13 @@ local function build_display_cmd(run_cmd, cwd)
         if shell:find("powershell") or shell:find("pwsh") then
             -- PowerShell
             return string.format(
-                "Write-Output 'cd > %s'; Write-Output '> %s'; Write-Output ''; %s",
+                "Write-Output '> cd %s'; Write-Output '> %s'; Write-Output ''; %s",
                 cwd:gsub("'", "''"), run_cmd:gsub("'", "''"), run_cmd
             )
         else
             -- cmd.exe
             return string.format(
-                "echo cd > %s & echo > %s & echo '' & %s",
+                "echo > cd %s & echo > %s & echo '' & %s",
                 cwd, run_cmd, run_cmd
             )
         end
@@ -27,6 +31,69 @@ local function build_display_cmd(run_cmd, cwd)
         )
     end
 end
+
+--- Determines which shell dialect we're dealing with, based on
+--- Neovim's 'shell' option and the OS.
+---@return "cmd" | "powershell" | "posix"
+local function get_shell_type()
+    if vim.fn.has("win32") == 1 then
+        local shell = (vim.o.shell or ""):lower()
+        if shell:find("powershell") or shell:find("pwsh") then
+            return "powershell"
+        end
+        return "cmd"
+    end
+    return "posix"
+end
+
+--- Builds a single "export"/"set" statement for one variable,
+--- using the correct syntax for the detected shell.
+---@param key string
+---@param value string
+---@return string
+local function build_export_stmt(key, value)
+    local shell_type = get_shell_type()
+    if shell_type == "cmd" then
+        -- cmd.exe: set "VAR=value"
+        return string.format('set "%s=%s"', key, value)
+    elseif shell_type == "powershell" then
+        -- PowerShell: $env:VAR="value"
+        return string.format('$env:%s="%s"', key, value)
+    else
+        -- POSIX shells: export VAR=value
+        return string.format("export %s=%s", key, vim.fn.shellescape(tostring(value)))
+    end
+end
+
+--- Builds the final command string by prepending exported variables
+--- and script invocations before the actual run command.
+---@param run_cmd string Command to run
+---@param export table<string,string>|nil Variables to export, e.g. { PATH = "/usr/bin", DEBUG = "1" }
+---@param scripts string[]|nil List of script commands to run first,
+---        e.g. { "source ./relative/path/to/script", "/path/to/script" }
+---@return string
+local function build_prefixed_cmd(run_cmd, export, scripts)
+    local parts = {}
+
+    -- Export variables first
+    if export and not vim.tbl_isempty(export) then
+        for key, value in pairs(export) do
+            table.insert(parts, build_export_stmt(key, value))
+        end
+    end
+
+    -- Run/source any scripts, in the order provided
+    if scripts and #scripts > 0 then
+        for _, script in ipairs(scripts) do
+            table.insert(parts, script)
+        end
+    end
+
+    table.insert(parts, run_cmd)
+
+    return table.concat(parts, sep)
+end
+
 
 local M = {}
 
@@ -70,7 +137,9 @@ end
 ---@param run_cmd string Command to run
 ---@param cwd string | nil Path to the directory to run from
 ---@param on_exit function A function to call upon exit
-M.run = function(run_cmd, cwd, on_exit)
+---@param export table<string,string>|nil Variables to export before running, e.g. { VAR = "value" }
+---@param scripts string[]|nil Scripts to run/source before run_cmd, e.g. { "source ./relative/path/to/script", "script/name" }
+M.run = function(run_cmd, cwd, on_exit, export, scripts)
     on_exit = on_exit or function() end
     -- Default directory is the directory of the file being run
     cwd = cwd or vim.fn.expand("%:p:h")
@@ -139,7 +208,9 @@ M.run = function(run_cmd, cwd, on_exit)
         vim.cmd("enew")
     end
 
-    local display_cmd = build_display_cmd(run_cmd, cwd)
+    local prefixed_cmd = build_prefixed_cmd(run_cmd, export, scripts)
+    local display_cmd = build_display_cmd(prefixed_cmd, cwd)
+
     vim.fn.termopen(display_cmd, {
         cwd = cwd,
         on_exit = function(_, exit_code, _)
@@ -164,14 +235,24 @@ end
 --- Resolves the placeholders and returns the actual command to be run
 --- The replacements should be passed in as a table e.g. { name = "name", date = "Sunday" }
 --- This replaces anything of the form ${placeholder} with the assigned replacement
----@param command string
----@param replacements table<string>
----@return string
+---@param command string|table<string>
+---@param replacements table<string, string>
+---@return string|table<string>
 M.resolve_placeholders = function(command, replacements)
-    local result = command:gsub("%${([%w_]+)}", replacements)
-    return result
-end
+    local function resolve_single(cmd)
+        return (cmd:gsub("%${([%w_]+)}", replacements))
+    end
 
+    if type(command) == "table" then
+        local results = {}
+        for _, cmd in ipairs(command) do
+            table.insert(results, resolve_single(cmd))
+        end
+        return results
+    end
+
+    return resolve_single(command)
+end
 
 --- Normalises a raw runner entry (string or table) into a Runner
 ---@param raw table|string

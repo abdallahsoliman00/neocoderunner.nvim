@@ -12,7 +12,8 @@ local function get_file_contents()
     local env_section = [[
     "env": {
         "cd": "${cwd}",
-        "export": {}
+        "export": {},
+        "scripts": []
     },
 ]]
     local parts = {}
@@ -33,6 +34,7 @@ M.init_ncrunner_file = function(override)
     local runners_file = get_runners_file()
     if vim.uv.fs_stat(runners_file) and not override then
         print("File already exists.")
+        vim.cmd("edit " .. vim.fn.fnameescape(runners_file))
     else
         vim.fn.mkdir(runners_dir, "p")
         local file, err = io.open(runners_file, "w")
@@ -41,6 +43,8 @@ M.init_ncrunner_file = function(override)
             file:write(file_contents)
             file:close()
             vim.notify("Success: File created at " .. runners_file, vim.log.levels.INFO)
+            -- Open in new buffer
+            vim.cmd("edit " .. vim.fn.fnameescape(runners_file))
         else
             vim.notify("Error creating file: " .. tostring(err), vim.log.levels.ERROR)
         end
