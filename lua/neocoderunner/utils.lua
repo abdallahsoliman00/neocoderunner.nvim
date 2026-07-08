@@ -2,36 +2,6 @@ local config = require("neocoderunner").config
 local sep = vim.o.shell:lower():find("powershell") and " ; " or " && "
 
 
----@param run_cmd string
----@param cwd string
-local function build_display_cmd(run_cmd, cwd)
-    if vim.fn.has("win32") == 1 then
-        local shell = vim.o.shell:lower()
-
-        if shell:find("powershell") or shell:find("pwsh") then
-            -- PowerShell
-            return string.format(
-                "Write-Output '> cd %s'; Write-Output '> %s'; Write-Output ''; %s",
-                cwd:gsub("'", "''"), run_cmd:gsub("'", "''"), run_cmd
-            )
-        else
-            -- cmd.exe
-            return string.format(
-                "echo > cd %s & echo > %s & echo '' & %s",
-                cwd, run_cmd, run_cmd
-            )
-        end
-    else
-        -- POSIX shell (Linux, macOS)
-        local escaped_cwd = cwd:gsub("'", "'\\''")
-        local escaped_cmd = run_cmd:gsub("'", "'\\''")
-        return string.format(
-            "echo '> cd %s'; echo '> %s'; echo ''; %s",
-            escaped_cwd, escaped_cmd, run_cmd
-        )
-    end
-end
-
 --- Determines which shell dialect we're dealing with, based on
 --- Neovim's 'shell' option and the OS.
 ---@return "cmd" | "powershell" | "posix"
@@ -65,14 +35,11 @@ local function build_export_stmt(key, value)
     end
 end
 
---- Builds the final command string by prepending exported variables
---- and script invocations before the actual run command.
----@param run_cmd string Command to run
----@param export table<string,string>|nil Variables to export, e.g. { PATH = "/usr/bin", DEBUG = "1" }
----@param scripts string[]|nil List of script commands to run first,
----        e.g. { "source ./relative/path/to/script", "/path/to/script" }
+--- Builds the prepend part of the run command
+---@param export table<string,string>|nil Variables to export
+---@param scripts string[]|nil List of script commands to run first
 ---@return string
-local function build_prefixed_cmd(run_cmd, export, scripts)
+local function build_command_prefix(export, scripts)
     local parts = {}
 
     -- Export variables first
@@ -89,9 +56,43 @@ local function build_prefixed_cmd(run_cmd, export, scripts)
         end
     end
 
-    table.insert(parts, run_cmd)
-
     return table.concat(parts, sep)
+end
+
+--- Builds thw whole command to be run and exports any environment vsriables
+--- as well as running any scripts in the process
+---@param run_cmd string
+---@param cwd string
+---@param export table<string, string> | nil
+---@param scripts string[]|nil
+local function build_run_cmd(run_cmd, cwd, export, scripts)
+    local prerun = build_command_prefix(export, scripts)
+    if vim.fn.has("win32") == 1 then
+        local shell = get_shell_type()
+
+        if shell == "powershell" then
+            -- PowerShell
+            return string.format(
+                "Write-Output '> cd %s'; Write-Output '> %s' ; Write-Output '> %s'; Write-Output ''; %s; %s",
+                cwd:gsub("'", "''"), prerun:gsub("'", "''"), run_cmd:gsub("'", "''"), prerun, run_cmd
+            )
+        else
+            -- cmd.exe
+            return string.format(
+                "echo > ^cd %s && echo ^> %s && echo ^> %s && echo '' && %s & %s",
+                cwd, prerun, run_cmd, prerun, run_cmd
+            )
+        end
+    else
+        -- POSIX shell (Linux, macOS)
+        local escaped_cwd = cwd:gsub("'", "'\\''")
+        local escaped_cmd = run_cmd:gsub("'", "'\\''")
+        local escaped_prerun = prerun:gsub("'", "'\\''")
+        return string.format(
+            "echo '> cd %s' && echo '> %s' && echo '> %s' && echo '' && %s && %s",
+            escaped_cwd, escaped_prerun, escaped_cmd, prerun, run_cmd
+        )
+    end
 end
 
 
@@ -208,8 +209,7 @@ M.run = function(run_cmd, cwd, on_exit, export, scripts)
         vim.cmd("enew")
     end
 
-    local prefixed_cmd = build_prefixed_cmd(run_cmd, export, scripts)
-    local display_cmd = build_display_cmd(prefixed_cmd, cwd)
+    local display_cmd = build_run_cmd(run_cmd, cwd, export, scripts)
 
     vim.fn.termopen(display_cmd, {
         cwd = cwd,
