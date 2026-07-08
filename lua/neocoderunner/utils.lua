@@ -38,7 +38,7 @@ end
 --- Builds the prepend part of the run command
 ---@param export table<string,string>|nil Variables to export
 ---@param scripts string[]|nil List of script commands to run first
----@return string
+---@return string | nil
 local function build_command_prefix(export, scripts)
     local parts = {}
 
@@ -56,7 +56,10 @@ local function build_command_prefix(export, scripts)
         end
     end
 
-    return table.concat(parts, sep)
+    if #parts > 0 then
+        return table.concat(parts, sep)
+    end
+    return nil
 end
 
 --- Builds thw whole command to be run and exports any environment vsriables
@@ -72,26 +75,47 @@ local function build_run_cmd(run_cmd, cwd, export, scripts)
 
         if shell == "powershell" then
             -- PowerShell
-            return string.format(
-                "Write-Output '> cd %s'; Write-Output '> %s' ; Write-Output '> %s'; Write-Output ''; %s; %s",
-                cwd:gsub("'", "''"), prerun:gsub("'", "''"), run_cmd:gsub("'", "''"), prerun, run_cmd
-            )
+            if prerun ~= nil then
+                return string.format(
+                    "Write-Output '> cd %s'; Write-Output '> %s' ; Write-Output '> %s'; Write-Output ''; %s; %s",
+                    cwd:gsub("'", "''"), prerun:gsub("'", "''"), run_cmd:gsub("'", "''"), prerun, run_cmd
+                )
+            else
+                return string.format(
+                    "Write-Output '> cd %s'; Write-Output '> %s'; Write-Output ''; %s",
+                    cwd:gsub("'", "''"), run_cmd:gsub("'", "''"), run_cmd
+                )
+            end
         else
             -- cmd.exe
-            return string.format(
-                "echo > ^cd %s && echo ^> %s && echo ^> %s && echo '' && %s & %s",
-                cwd, prerun, run_cmd, prerun, run_cmd
-            )
+            if prerun ~= nil then
+                return string.format(
+                    "echo > ^cd %s && echo ^> %s && echo ^> %s && echo '' && %s & %s",
+                    cwd, prerun, run_cmd, prerun, run_cmd
+                )
+            else
+                return string.format(
+                    "echo > ^cd %s && echo ^> %s && echo '' && %s",
+                    cwd, run_cmd, run_cmd
+                )
+            end
         end
     else
         -- POSIX shell (Linux, macOS)
         local escaped_cwd = cwd:gsub("'", "'\\''")
         local escaped_cmd = run_cmd:gsub("'", "'\\''")
-        local escaped_prerun = prerun:gsub("'", "'\\''")
-        return string.format(
-            "echo '> cd %s' && echo '> %s' && echo '> %s' && echo '' && %s && %s",
-            escaped_cwd, escaped_prerun, escaped_cmd, prerun, run_cmd
-        )
+        if prerun ~= nil then
+            local escaped_prerun = prerun:gsub("'", "'\\''")
+            return string.format(
+                "echo '> cd %s' && echo '> %s' && echo '> %s' && echo '' && %s && %s",
+                escaped_cwd, escaped_prerun, escaped_cmd, prerun, run_cmd
+            )
+        else
+            return string.format(
+                "echo '> cd %s' && echo '> %s' && echo '' && %s",
+                escaped_cwd, escaped_cmd, run_cmd
+            )
+        end
     end
 end
 

@@ -36,11 +36,10 @@ end
 
 M.run_code_snippet = function()
     local run_cmd = default.get_code_snippet_run_command()
-    local env = get_env()
     if run_cmd then
         run(run_cmd, nil, function()
             default.delete_temp_files()
-        end, env.export, env.scripts)
+        end, nil, nil)
     end
 end
 
