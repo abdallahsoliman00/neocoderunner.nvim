@@ -1,7 +1,6 @@
 local config = require("neocoderunner").config
 local sep = vim.o.shell:lower():find("powershell") and " ; " or " && "
 
-
 --- Determines which shell dialect we're dealing with, based on
 --- Neovim's 'shell' option and the OS.
 ---@return "cmd" | "powershell" | "posix"
@@ -78,12 +77,18 @@ local function build_run_cmd(run_cmd, cwd, export, scripts)
             if prerun ~= nil then
                 return string.format(
                     "Write-Output '> cd %s'; Write-Output '> %s' ; Write-Output '> %s'; Write-Output ''; %s; %s",
-                    cwd:gsub("'", "''"), prerun:gsub("'", "''"), run_cmd:gsub("'", "''"), prerun, run_cmd
+                    cwd:gsub("'", "''"),
+                    prerun:gsub("'", "''"),
+                    run_cmd:gsub("'", "''"),
+                    prerun,
+                    run_cmd
                 )
             else
                 return string.format(
                     "Write-Output '> cd %s'; Write-Output '> %s'; Write-Output ''; %s",
-                    cwd:gsub("'", "''"), run_cmd:gsub("'", "''"), run_cmd
+                    cwd:gsub("'", "''"),
+                    run_cmd:gsub("'", "''"),
+                    run_cmd
                 )
             end
         else
@@ -91,12 +96,18 @@ local function build_run_cmd(run_cmd, cwd, export, scripts)
             if prerun ~= nil then
                 return string.format(
                     "echo > ^cd %s && echo ^> %s && echo ^> %s && echo '' && %s & %s",
-                    cwd, prerun, run_cmd, prerun, run_cmd
+                    cwd,
+                    prerun,
+                    run_cmd,
+                    prerun,
+                    run_cmd
                 )
             else
                 return string.format(
                     "echo > ^cd %s && echo ^> %s && echo '' && %s",
-                    cwd, run_cmd, run_cmd
+                    cwd,
+                    run_cmd,
+                    run_cmd
                 )
             end
         end
@@ -108,17 +119,22 @@ local function build_run_cmd(run_cmd, cwd, export, scripts)
             local escaped_prerun = prerun:gsub("'", "'\\''")
             return string.format(
                 "echo '> cd %s' && echo '> %s' && echo '> %s' && echo '' && %s && %s",
-                escaped_cwd, escaped_prerun, escaped_cmd, prerun, run_cmd
+                escaped_cwd,
+                escaped_prerun,
+                escaped_cmd,
+                prerun,
+                run_cmd
             )
         else
             return string.format(
                 "echo '> cd %s' && echo '> %s' && echo '' && %s",
-                escaped_cwd, escaped_cmd, run_cmd
+                escaped_cwd,
+                escaped_cmd,
+                run_cmd
             )
         end
     end
 end
-
 
 local M = {}
 
@@ -143,8 +159,8 @@ end
 
 --- Returns a table with properties of the current file:
 ---		.fullpath: Absolute path to file
----		.filename: File name (eg. file.cpp)
----		.basename: File name without extension (ex. file)
+---		.filename: File name (e.g. file.cpp)
+---		.basename: File name without extension (e.g. file)
 ---		.relative: Filepath relative to cwd
 ---		.type:     File type (e.g. cpp, python, etc...)
 ---@return table<string>
@@ -188,6 +204,9 @@ M.run = function(run_cmd, cwd, on_exit, export, scripts)
         return
     end
 
+    -- Track the terminal buffer number so we can rename it after termopen
+    local buf
+
     if pos == "floating" then
         local curr_win = vim.api.nvim_get_current_win()
         local win_width = vim.api.nvim_win_get_width(curr_win)
@@ -198,7 +217,7 @@ M.run = function(run_cmd, cwd, on_exit, export, scripts)
         local row = math.ceil((win_height - height) / 2)
         local col = math.ceil((win_width - width) / 2)
 
-        local buf = vim.api.nvim_create_buf(false, true)
+        buf = vim.api.nvim_create_buf(false, true)
         local win = vim.api.nvim_open_win(buf, true, {
             relative = "win",
             win = curr_win,
@@ -213,28 +232,30 @@ M.run = function(run_cmd, cwd, on_exit, export, scripts)
     else
         local parent_width = vim.api.nvim_win_get_width(0)
         local parent_height = vim.api.nvim_win_get_height(0)
-
-        local commands = {
-            bottom = "rightbelow split",
-            top = "leftabove split",
-            left = "leftabove vsplit",
-            right = "rightbelow vsplit",
-        }
-
-        vim.cmd(commands[pos] or "split")
-
-        if pos == "left" or pos == "right" then
-            local target_width = math.ceil(parent_width * footprint)
-            vim.cmd("vertical resize " .. target_width)
+        local full_size = footprint >= 1
+        if full_size then
+            vim.cmd("tabnew")
         else
-            local target_height = math.ceil(parent_height * footprint)
-            vim.cmd("resize " .. target_height)
+            local commands = {
+                bottom = "rightbelow split",
+                top = "leftabove split",
+                left = "leftabove vsplit",
+                right = "rightbelow vsplit",
+            }
+            vim.cmd(commands[pos] or "split")
+            if pos == "left" or pos == "right" then
+                local target_width = math.ceil(parent_width * footprint)
+                vim.cmd("vertical resize " .. target_width)
+            else
+                local target_height = math.ceil(parent_height * footprint)
+                vim.cmd("resize " .. target_height)
+            end
         end
         vim.cmd("enew")
+        buf = vim.api.nvim_get_current_buf()
     end
 
     local display_cmd = build_run_cmd(run_cmd, cwd, export, scripts)
-
     vim.fn.termopen(display_cmd, {
         cwd = cwd,
         on_exit = function(_, exit_code, _)
@@ -242,6 +263,15 @@ M.run = function(run_cmd, cwd, on_exit, export, scripts)
             on_exit()
         end,
     })
+
+    -- Since anything set before termopen gets overwritten. Append the buffer
+    -- number to keep the name unique across multiple runs.
+    local name = "NCRunnerBuffer"
+    local ok, err = pcall(vim.api.nvim_buf_set_name, buf, name .. "[" .. buf .. "]")
+    if not ok then
+        vim.notify("Could not rename terminal buffer: " .. err, vim.log.levels.WARN)
+    end
+
     vim.cmd("startinsert")
 end
 
@@ -282,13 +312,16 @@ end
 ---@param raw table|string
 ---@return Runner
 M.normalise_runner = function(raw)
-    local fileinfo = require("neocoderunner.utils").get_current_file_info()
-    local replacements = { fileName = fileinfo.basename, filePath = fileinfo.relative }
+    local fileinfo = M.get_current_file_info()
+    local replacements = { fileName = fileinfo.basename, filePath = fileinfo.relative, cwd = vim.fn.getcwd() }
 
     if type(raw) == "string" then
         return { build = nil, run = M.resolve_placeholders(raw, replacements) }
     end
-    return { build = M.resolve_placeholders(raw.build, replacements), run = M.resolve_placeholders(raw.run, replacements) }
+    return {
+        build = M.resolve_placeholders(raw.build, replacements),
+        run = M.resolve_placeholders(raw.run, replacements),
+    }
 end
 
 return M

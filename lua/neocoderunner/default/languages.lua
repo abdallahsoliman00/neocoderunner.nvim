@@ -78,6 +78,7 @@ local languages = {
     },
     -- This is left empty on purpose for the user to define in the runners.json file
     global = {
+        extensions = {},
         runner = function()
             return ""
         end

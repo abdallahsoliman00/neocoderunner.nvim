@@ -33,7 +33,7 @@ M.init_ncrunner_file = function(override)
     local runners_dir = get_runners_dir()
     local runners_file = get_runners_file()
     if vim.uv.fs_stat(runners_file) and not override then
-        print("File already exists.")
+        print("File already exists. To override the current file, please provide 'override' or 'o' as an argument to the :InitRunnerConfig command.")
         vim.cmd("edit " .. vim.fn.fnameescape(runners_file))
     else
         vim.fn.mkdir(runners_dir, "p")
