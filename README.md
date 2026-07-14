@@ -54,8 +54,8 @@ use({
             terminal_footprint = 0.33,
         })
         -- Easy run with keymap (optional)
-        vim.keymap.set("n", "<C-S-B>", ":NCRunnerBuild<CR>", { silent = true, noremap = true } },
-        vim.keymap.set("n", "<C-S-R>", ":NCRunnerRun<CR>", { silent = true, noremap = true } },
+        vim.keymap.set("n", "<C-S-B>", ":NCRunnerBuild<CR>", { silent = true, noremap = true })
+        vim.keymap.set("n", "<C-S-R>", ":NCRunnerRun<CR>", { silent = true, noremap = true })
         vim.keymap.set("n", "<C-S-N>", ":RunCurrentFile<CR>", { silent = true, noremap = true })
         vim.keymap.set("v", "<C-S-N>", ":<C-U>RunCodeSnippet<CR>", { silent = true, noremap = true })
     end
@@ -67,12 +67,18 @@ use({
 ```lua
 {
     -- Position of the neocoderunner terminal
-    terminal_position = "bottom",    -- other options include "top", "floating", "left", "right"
+    terminal_position = "bottom",    -- "bottom", "top", "left", "right", "floating", or a number >= 1
 
     -- How much of the existing window the neocoderunner terminal will occupy
     terminal_footprint = 0.33,
 }
 ```
+
+When `terminal_position` is `"floating"`, the terminal opens in a centered floating window (80% width, 70% height) with rounded borders instead of a split.
+If set to a number >= 1, the terminal opens in a new tab instead of a split (overriding the footprint value).
+
+The `terminal_footprint` controls the size ratio: for horizontal splits (`"top"`, `"bottom"`) it determines the height ratio;
+for vertical splits (`"left"`, `"right"`) it determines the width ratio.
 
 
 ## Runner Configuration
@@ -112,7 +118,7 @@ PHP
 php ${filePath}
 ```
 *Note: The exact commands that are run depend on the shell being used, but the above are a close approximation and are the ones run in a bash shell.
-And don't worry, thew plugin detects the shell and adjusts the default commands accordingly.
+And don't worry, the plugin detects the shell and adjusts the default commands accordingly.
 
 ### Setup
 To configure the runner for each filetype, the command `:InitRunnerConfig` can be used to generate a json file
