@@ -5,7 +5,7 @@ local M = {}
 
 M.setup = function()
 
-    vim.api.nvim_create_user_command("InitRunnerConfig", function(opts)
+    vim.api.nvim_create_user_command("NCRunnerConfig", function(opts)
         local arg = opts.fargs[1]
         local override = false
         if arg == "o" or arg == "override" then
@@ -40,14 +40,14 @@ M.setup = function()
         desc = "Runs the run command defined in the runners.json file.",
     })
 
-    vim.api.nvim_create_user_command("RunCurrentFile", function()
+    vim.api.nvim_create_user_command("NCRunCurrentFile", function()
         run_commands.run_current_file()
     end, {
         nargs = 0,
         desc = "Runs the file in the active buffer in a split. This will either run both compile and run commands if they exist, or will run the full runner line.",
     })
 
-    vim.api.nvim_create_user_command("RunCodeSnippet", function(opts)
+    vim.api.nvim_create_user_command("NCRunCodeSnippet", function(opts)
         if opts.range > 0 then
             local lines = vim.api.nvim_buf_get_lines(0, opts.line1 - 1, opts.line2, false)
             local snippet = table.concat(lines, "\n")
