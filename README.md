@@ -7,7 +7,10 @@ Configure once, and run forever.
 
 (Inspired by VSCode's code runner.)
 
-![Demo](media/neocoderunner.gif)
+<p>
+  <video src="media/neocoderunner-demo.mp4" width="80%" controls></video>
+</p>
+
 
 ## Overview
 By default, this plugin provides a quick way to test a small piece of code very quickly. Either run the whole file, or highlight a section and run that.
