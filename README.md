@@ -23,7 +23,7 @@ The plugin provides five commands:
 - `:NCRunnerRun` - Runs the run command for the filetype of the file in the current buffer.
 - `:RunCurrentFile` - Runs both the build and run commands in one sweep.
 - `:RunCodeSnippet` - Runs a visually selected snippet by writing it to a temporary file, executing it, then cleaning up automatically.
-- `:InitRunnerConfig` - Creates and initialises the file where the current working directory's configuration will be configured.
+- `:NCRunnerConfig` - Creates and initialises the file where the current working directory's configuration will be configured.
 
 All commands are best mapped to keybinds for the smoothest workflow. (See the [Setup](#setup) section.)
 
@@ -117,10 +117,10 @@ for vertical splits (`"left"`, `"right"`) it determines the width ratio.
 ## Runner Configuration
 
 ### Setup
-To configure the runner for each filetype, the command `:InitRunnerConfig` can be used to generate a json file
+To configure the runner for each filetype, the command `:NNCRunnerConfig` can be used to generate a json file
 (at `{root}/.ncrunner/runners.json`) containing the default commands and environment used.
 
-If the file already exists, and you want to create a new one, try `:InitRunnerConfig override` or `:InitRunnerConfig o` to override the currently existing file.
+If the file already exists, and you want to create a new one, try `:NCRunnerConfig override` or `:NCRunnerConfig o` to override the currently existing file.
 The resulting generated json should look something like this:
 ```json
 {
