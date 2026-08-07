@@ -21,9 +21,9 @@ If making a custom configuration for your project doesn't interest you, no need 
 The plugin provides five commands:
 - `:NCRunnerBuild` - Runs the build command for the filetype of the file in the current buffer, if defined.
 - `:NCRunnerRun` - Runs the run command for the filetype of the file in the current buffer.
-- `:RunCurrentFile` - Runs both the build and run commands in one sweep.
-- `:RunCodeSnippet` - Runs a visually selected snippet by writing it to a temporary file, executing it, then cleaning up automatically.
-- `:InitRunnerConfig` - Creates and initialises the file where the current working directory's configuration will be configured.
+- `:NCRunCurrentFile` - Runs both the build and run commands in one sweep.
+- `:NCRunCodeSnippet` - Runs a visually selected snippet by writing it to a temporary file, executing it, then cleaning up automatically.
+- `:NCRunnerConfig` - Creates and initialises the file where the current working directory's configuration will be configured.
 
 All commands are best mapped to keybinds for the smoothest workflow. (See the [Setup](#setup) section.)
 
@@ -31,9 +31,9 @@ All commands are best mapped to keybinds for the smoothest workflow. (See the [S
 By adding this plugin, you now have access to two commands that can help you quickly run test pieces of code or whole files
 without any additional configuration:
 
-- **`:RunCurrentFile`**: Runs the entire file in your active buffer inside a terminal split. Just open a file and run the command.
+- **`:NCRunCurrentFile`**: Runs the entire file in your active buffer inside a terminal split. Just open a file and run the command.
 
-- **`:RunCodeSnippet`**: Works visually. Highlight any block of code, run the command, and only that selected snippet gets executed in a temporary file that cleans up after itself.
+- **`:NCRunCodeSnippet`**: Works visually. Highlight any block of code, run the command, and only that selected snippet gets executed in a temporary file that cleans up after itself.
 
 Both commands automatically detect the filetype and use the appropriate runner. The following languages are supported out of the box:
 
@@ -71,8 +71,8 @@ If your project has a more involved build pipeline, continue reading below.
         -- Easy run with keymaps (optional)
         { "<C-S-B>", ":NCRunnerBuild<CR>", mode = "n", silent = true, noremap = true },
         { "<C-S-R>", ":NCRunnerRun<CR>", mode = "n", silent = true, noremap = true },
-        { "<C-S-N>", ":RunCurrentFile<CR>", mode = "n", silent = true, noremap = true },
-        { "<C-S-N>", ":<C-U>RunCodeSnippet<CR>", mode = "v", silent = true, noremap = true },
+        { "<C-S-N>", ":NCRunCurrentFile<CR>", mode = "n", silent = true, noremap = true },
+        { "<C-S-N>", ":<C-U>NCRunCodeSnippet<CR>", mode = "v", silent = true, noremap = true },
     },
 }
 ```
@@ -89,8 +89,8 @@ use({
         -- Easy run with keymap (optional)
         vim.keymap.set("n", "<C-S-B>", ":NCRunnerBuild<CR>", { silent = true, noremap = true })
         vim.keymap.set("n", "<C-S-R>", ":NCRunnerRun<CR>", { silent = true, noremap = true })
-        vim.keymap.set("n", "<C-S-N>", ":RunCurrentFile<CR>", { silent = true, noremap = true })
-        vim.keymap.set("v", "<C-S-N>", ":<C-U>RunCodeSnippet<CR>", { silent = true, noremap = true })
+        vim.keymap.set("n", "<C-S-N>", ":NCRunCurrentFile<CR>", { silent = true, noremap = true })
+        vim.keymap.set("v", "<C-S-N>", ":<C-U>NCRunCodeSnippet<CR>", { silent = true, noremap = true })
     end
 })
 ```
@@ -117,10 +117,10 @@ for vertical splits (`"left"`, `"right"`) it determines the width ratio.
 ## Runner Configuration
 
 ### Setup
-To configure the runner for each filetype, the command `:InitRunnerConfig` can be used to generate a json file
+To configure the runner for each filetype, the command `:NNCRunnerConfig` can be used to generate a json file
 (at `{root}/.ncrunner/runners.json`) containing the default commands and environment used.
 
-If the file already exists, and you want to create a new one, try `:InitRunnerConfig override` or `:InitRunnerConfig o` to override the currently existing file.
+If the file already exists, and you want to create a new one, try `:NCRunnerConfig override` or `:NCRunnerConfig o` to override the currently existing file.
 The resulting generated json should look something like this:
 ```json
 {
@@ -193,10 +193,10 @@ This section is where the run commands are configured. Each runner can be config
 }
 ```
 When using the split build/run form, `:NCRunnerBuild` runs only the `build` command and `:NCRunnerRun` runs only the `run` command.
-`:RunCurrentFile` chains both together with `&&` (or `;` for PowerShell). This is useful for larger projects where compiling and executing are separate steps.
+`:NCRunCurrentFile` chains both together with `&&` (or `;` for PowerShell). This is useful for larger projects where compiling and executing are separate steps.
 
 If a runner is a single string (one-liner), `:NCRunnerBuild` has no effect (since there is no separate build step),
-while `:NCRunnerRun` and `:RunCurrentFile` both execute the full command.
+while `:NCRunnerRun` and `:NCRunCurrentFile` both execute the full command.
 
 #### The "global" runner
 For large projects where different filetypes may be open in your buffer, switching to a buffer where, for example, Python is open only to execute the Python-specific
