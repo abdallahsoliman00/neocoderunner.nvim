@@ -1,5 +1,7 @@
+Here, new features, or in general, ideas are simply written down.
+
 # TODO
-- Edit the README to acccount for the changes.
+
 - Make a global configuration for the runners where the user can set the default runners globally for their profile in the config for the plugin.
 - When running a snippet, make the run code indent agnostic.
     What this means is that if we want to run the first two lines in the function:

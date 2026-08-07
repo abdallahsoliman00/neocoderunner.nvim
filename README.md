@@ -37,19 +37,22 @@ without any additional configuration:
 
 Both commands automatically detect the filetype and use the appropriate runner. The following languages are supported out of the box:
 
-| Language   | File Extensions |
+| Language   | Default Run Command |
 |-----------|----------------|
-| C         | `.c`, `.h`     |
-| C++       | `.cpp`, `.cc`, `.cxx`, `.hpp` |
-| Rust      | `.rs`          |
-| Lua       | `.lua`         |
-| Python    | `.py`          |
-| JavaScript| `.js`          |
-| TypeScript| `.ts`          |
-| Perl      | `.pl`          |
-| Go        | `.go`          |
-| PHP       | `.php`         |
-| Zig       | `.zig`         |
+| C         |  `gcc -o ${fileName} ${filePath} && ./${fileName}`  |
+| C++       | `g++ -o ${fileName} ${filePath} && ./${fileName}` |
+| Rust      | `rustc ${filePath} && ./${fileName}`          |
+| Lua       | `lua ${filePath}`         |
+| Python    | `python -u ${filePath}`          |
+| JavaScript| `node ${filePath}`          |
+| TypeScript| `npx tsx ${filePath}`          |
+| Perl      | `perl ${filePath}`          |
+| Go        | `go run ${filePath}`          |
+| PHP       | `php ${filePath}`         |
+| Zig       | `zig run ${filePath}`         |
+
+*Note: The exact commands that are run depend on the shell being used, but the above are a close approximation and are the ones run in a bash shell.
+And don't worry, the plugin detects the shell and adjusts the default commands accordingly.
 
 If that's all you need, map the commands and you're done. Check the [Setup](#setup) section for keybind examples.
 If your project has a more involved build pipeline, continue reading below.
@@ -112,43 +115,6 @@ for vertical splits (`"left"`, `"right"`) it determines the width ratio.
 
 
 ## Runner Configuration
-By default, the following are the commands that are run when the file open in the current buffer is run:
-```
-C
-gcc -o ${fileName} ${filePath} && ./${fileName}
-
-C++
-g++ -o ${fileName} ${filePath} && ./${fileName}
-
-Rust
-rustc ${filePath} && ./${fileName}
-
-Lua
-lua ${filePath}
-
-Python
-python -u ${filePath}
-
-Javascript
-node ${filePath}
-
-Typescript
-npx tsx ${filePath}
-
-Perl
-perl ${filePath}
-
-Go
-go run ${filePath}
-
-Zig
-zig run ${filePath}
-
-PHP
-php ${filePath}
-```
-*Note: The exact commands that are run depend on the shell being used, but the above are a close approximation and are the ones run in a bash shell.
-And don't worry, the plugin detects the shell and adjusts the default commands accordingly.
 
 ### Setup
 To configure the runner for each filetype, the command `:InitRunnerConfig` can be used to generate a json file
