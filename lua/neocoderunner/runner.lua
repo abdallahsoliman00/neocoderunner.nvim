@@ -35,10 +35,12 @@ M.run_current_file = function()
 end
 
 M.run_code_snippet = function()
-    local run_cmd = default.get_code_snippet_run_command()
+    local run_cmd, tempdir = default.get_code_snippet_run_command()
     if run_cmd then
-        run(run_cmd, nil, function()
-            default.delete_temp_files()
+        run(run_cmd, tempdir, function()
+            if tempdir ~= nil then
+                default.delete_temp_dir(tempdir)
+            end
         end, nil, nil)
     end
 end
