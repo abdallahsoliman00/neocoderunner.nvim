@@ -117,7 +117,7 @@ for vertical splits (`"left"`, `"right"`) it determines the width ratio.
 ## Runner Configuration
 
 ### Setup
-To configure the runner for each filetype, the command `:NNCRunnerConfig` can be used to generate a json file
+To configure the runner for each filetype, the command `:NCRunnerConfig` can be used to generate a json file
 (at `{root}/.ncrunner/runners.json`) containing the default commands and environment used.
 
 If the file already exists, and you want to create a new one, try `:NCRunnerConfig override` or `:NCRunnerConfig o` to override the currently existing file.
@@ -203,7 +203,7 @@ For large projects where different filetypes may be open in your buffer, switchi
 run command may be tedious. This is where the `"global"` runner comes in handy.
 
 You can set a `"global"` runner that applies to all filetypes, regardless of what file is open:
-```json
+```jsonc
 {
     "runners": {
         "global": "python3 -m main"

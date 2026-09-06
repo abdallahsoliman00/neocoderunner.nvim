@@ -4,6 +4,61 @@ local languages = require("neocoderunner.default.languages")
 local utils = require("neocoderunner.utils")
 
 local tempfile_name = "neocoderunner_tempfile"
+local temp_root = vim.fn.stdpath("cache") .. "/neocoderunner"
+
+---@type table<string, boolean>
+local pending_tempdirs = {}
+
+local tempdir_counter = 0
+
+--- Recursively deletes a temp directory
+---@param dir string
+---@return boolean success
+local function remove_dir(dir)
+    return vim.fn.delete(dir, "rf") == 0
+end
+
+--- Creates a unique temp directory for a snippet run and tracks it for cleanup
+---@return string
+local function make_tempdir()
+    -- Unique across concurrent Neovim instances (pid) and within one session (counter)
+    tempdir_counter = tempdir_counter + 1
+    local dir = ("%s/%d-%d"):format(temp_root, vim.fn.getpid(), tempdir_counter)
+    vim.fn.mkdir(dir, "p")
+    pending_tempdirs[dir] = true
+    return dir
+end
+
+---@param dir string
+---@param lang Language
+---@return string
+local function get_tempfile_path(dir, lang)
+    return dir .. "/" .. tempfile_name .. "." .. lang.extensions[1]
+end
+
+-- Reclaim orphaned temp directories from previous (crashed) sessions.
+-- Very recent directories are skipped since another running instance may be using them.
+if vim.uv.fs_stat(temp_root) then
+    local now = os.time()
+    for name, type in vim.fs.dir(temp_root) do
+        local path = temp_root .. "/" .. name
+        local stat = type == "directory" and vim.uv.fs_stat(path)
+        if stat and now - stat.mtime.sec > 60 then
+            remove_dir(path)
+        end
+    end
+end
+
+-- Fallback cleanup for snippet runs whose job never exited
+local cleanup_group = vim.api.nvim_create_augroup("NeoCodeRunnerTempCleanup", { clear = true })
+vim.api.nvim_create_autocmd("VimLeavePre", {
+    group = cleanup_group,
+    callback = function()
+        for dir, _ in pairs(pending_tempdirs) do
+            remove_dir(dir)
+        end
+    end,
+})
 
 local M = {}
 
@@ -25,8 +80,10 @@ M.get_run_command = function()
 end
 
 --- Adds the code snippet to a temp file and returns the command needed to run this temp file
----@return string | nil
+---@return string | nil cmd
+---@return string | nil tempdir Directory the command must run from, deleted after the run
 M.get_code_snippet_run_command = function()
+    ---@type string
     local ft = vim.bo.filetype
     local lang = languages[ft]
     if not lang or not lang.runner then
@@ -37,11 +94,6 @@ M.get_code_snippet_run_command = function()
         return nil
     end
     local runner = lang.runner
-    local tempfile_path = vim.fn.getcwd()
-        .. "/"
-        .. tempfile_name
-        .. "."
-        .. lang.extensions[1]
 
     -- Get highlighted selection
     local selection = utils.get_visual_selection()
@@ -49,14 +101,21 @@ M.get_code_snippet_run_command = function()
         vim.notify("No text selected.", vim.log.levels.WARN)
         return nil
     end
+
+    local tempdir = make_tempdir()
+    local tempfile_path = get_tempfile_path(tempdir, lang)
+
     -- Write selection to file
     local file, err = io.open(tempfile_path, "w")
     if not file then
+        remove_dir(tempdir)
+        pending_tempdirs[tempdir] = nil
         vim.notify("Failed to create temp file: " .. err, vim.log.levels.ERROR)
         return nil
     end
 
     -- Verify that the language has headers defined
+    -- TODO: Could similar logic be used to include required modules for a copied snippet?
     if lang.headers then
         for _, header in pairs(lang.headers) do
             -- If the header is not already in the selection, add it to the top of the file
@@ -69,25 +128,16 @@ M.get_code_snippet_run_command = function()
     file:write(selection)
     file:close()
     -- Get command to run temp file
-    return runner and runner(tempfile_path, tempfile_name)
+    return runner(tempfile_path, tempfile_name), tempdir
 end
 
---- Deletes any temp files generated to run the code snippets
-M.delete_temp_files = function()
-    local cwd = vim.fn.getcwd()
-
-    for name, type in vim.fs.dir(cwd) do
-        -- only delete regular files
-        if type == "file" and name:find(tempfile_name, 1, true) then
-            local path = cwd .. "/" .. name
-            local ok, err = os.remove(path)
-            if not ok then
-                vim.notify(
-                    "Failed to delete file: " .. path .. " (" .. tostring(err) .. ")",
-                    vim.log.levels.WARN
-                )
-            end
-        end
+--- Deletes the temp directory used by a single snippet run
+---@param dir string
+M.delete_temp_dir = function(dir)
+    if remove_dir(dir) then
+        pending_tempdirs[dir] = nil
+    else
+        vim.notify("Failed to delete temp directory: " .. dir, vim.log.levels.WARN)
     end
 end
 
