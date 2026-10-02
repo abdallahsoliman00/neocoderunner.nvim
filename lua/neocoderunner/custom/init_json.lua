@@ -1,4 +1,9 @@
 local languages = require("neocoderunner.default.languages")
+local utils = require("neocoderunner.utils")
+local config = require("neocoderunner").config
+local default_runners = config.default_runners
+
+require("neocoderunner.types.Runner")
 
 local function get_runners_dir()
     return vim.fn.getcwd() .. "/.ncrunner"
@@ -6,6 +11,45 @@ end
 
 local function get_runners_file()
     return get_runners_dir() .. "/runners.json"
+end
+
+--- Escapes a string so it can be safely embedded in a json string
+---@param str string
+---@return string
+local function escape_json_string(str)
+    local escapes = {
+        ['"'] = '\\"',
+        ["\\"] = "\\\\",
+        ["\b"] = "\\b",
+        ["\f"] = "\\f",
+        ["\n"] = "\\n",
+        ["\r"] = "\\r",
+        ["\t"] = "\\t",
+    }
+    return (str:gsub('[%c"\\]', function(c)
+        return escapes[c] or string.format("\\u%04x", c:byte())
+    end))
+end
+
+--- Takes in a lang and its @Runner type and returns the corresponding json entry
+---@param lang string
+---@param runner Runner|nil
+---@return string
+local function write_runner_as_json(lang, runner)
+    if runner == nil then
+        return string.format('        "%s": ""',
+        escape_json_string(lang)
+    )
+    end
+    if runner.build ~= nil and runner.build ~= "" then
+        return string.format(
+            '        "%s": {\n            "build": "%s",\n            "run": "%s"\n        }',
+            escape_json_string(lang),
+            escape_json_string(runner.build),
+            escape_json_string(runner.run)
+        )
+    end
+    return string.format('        "%s": "%s"', escape_json_string(lang), escape_json_string(runner.run))
 end
 
 local function get_file_contents()
@@ -18,8 +62,14 @@ local function get_file_contents()
 ]]
     local parts = {}
     for _, name in ipairs(languages.order) do
-        local lang = languages[name]
-        table.insert(parts, string.format('        "%s": "%s"', name, lang.runner("${filePath}", "${fileName}")))
+        local runner = nil
+        if default_runners ~= nil and default_runners[name] ~= nil then
+            runner = utils.to_runner(default_runners[name])
+        end
+        if runner == nil then
+            runner = utils.to_runner(languages[name].runner("${filePath}", "${fileName}"))
+        end
+        table.insert(parts, write_runner_as_json(name, runner))
     end
     local runners_section = '    "runners": {\n' .. table.concat(parts, ",\n") .. '\n    }'
     return "{\n" .. env_section .. runners_section .. "\n}"
@@ -52,4 +102,3 @@ M.init_ncrunner_file = function(override)
 end
 
 return M
-

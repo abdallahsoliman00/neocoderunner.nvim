@@ -1,4 +1,5 @@
 require("neocoderunner.types.Runner")
+local config = require("neocoderunner").config
 
 local languages = require("neocoderunner.default.languages")
 local utils = require("neocoderunner.utils")
@@ -62,7 +63,7 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 
 local M = {}
 
---- Gets the run command for the current file
+--- Gets the default run command for the current file
 ---@return Runner | nil
 M.get_run_command = function()
     local fi = utils.get_current_file_info()
@@ -74,6 +75,10 @@ M.get_run_command = function()
             vim.log.levels.WARN
         )
         return nil
+    end
+
+    if config.default_runners ~= nil and config.default_runners[lang] ~= nil then
+        return utils.normalise_runner(config.default_runners[lang])
     end
 
     return utils.normalise_runner(lang.runner(fi.fullpath, fi.basename))
