@@ -1,4 +1,3 @@
-local config = require("neocoderunner").config
 local sep = vim.o.shell:lower():find("powershell") and " ; " or " && "
 
 --- Determines which shell dialect we're dealing with, based on
@@ -196,6 +195,7 @@ M.run = function(run_cmd, cwd, on_exit, export, scripts)
         end
     end
 
+    local config = require("neocoderunner").config
     local pos = config.terminal_position or "bottom"
     local footprint = config.terminal_footprint or 0.33
 
@@ -310,7 +310,7 @@ end
 
 --- Normalises a raw runner entry (string or table) into a Runner
 ---@param raw table|string
----@return Runner
+---@return Runner|nil
 M.normalise_runner = function(raw)
     local fileinfo = M.get_current_file_info()
     local replacements = { fileName = fileinfo.basename, filePath = fileinfo.relative, cwd = vim.fn.getcwd() }
@@ -318,10 +318,37 @@ M.normalise_runner = function(raw)
     if type(raw) == "string" then
         return { build = nil, run = M.resolve_placeholders(raw, replacements) }
     end
-    return {
-        build = M.resolve_placeholders(raw.build, replacements),
-        run = M.resolve_placeholders(raw.run, replacements),
-    }
+    if type(raw) == "table" then
+        if raw.build ~= nil and raw.run ~= nil then
+            return {
+                build = M.resolve_placeholders(raw.build, replacements),
+                run = M.resolve_placeholders(raw.run, replacements),
+            }
+        elseif type(raw[1]) == "string" then
+            return { build = nil, run = M.resolve_placeholders(raw[1], replacements) }
+        else
+            return nil
+        end
+    end
 end
+
+--- Converts a raw runner entry (string, one-element list or Runner) into a Runner,
+--- without resolving any placeholders
+---@param raw string|string[]|Runner
+---@return Runner|nil
+M.to_runner  = function(raw)
+    if type(raw) == "string" then
+        return { build = nil, run = raw }
+    end
+    if type(raw) == "table" then
+        if type(raw.build) == "string" and type(raw.run) == "string" then
+            return { build = raw.build, run = raw.run }
+        elseif type(raw[1]) == "string" then
+            return { build = nil, run = raw[1] }
+        end
+    end
+    return nil
+end
+
 
 return M
