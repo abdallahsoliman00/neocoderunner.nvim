@@ -1,4 +1,3 @@
-local config = require("neocoderunner").config
 local sep = vim.o.shell:lower():find("powershell") and " ; " or " && "
 
 --- Determines which shell dialect we're dealing with, based on
@@ -196,6 +195,7 @@ M.run = function(run_cmd, cwd, on_exit, export, scripts)
         end
     end
 
+    local config = require("neocoderunner").config
     local pos = config.terminal_position or "bottom"
     local footprint = config.terminal_footprint or 0.33
 

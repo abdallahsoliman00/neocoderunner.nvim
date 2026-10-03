@@ -1,5 +1,4 @@
 require("neocoderunner.types.Runner")
-local config = require("neocoderunner").config
 
 local languages = require("neocoderunner.default.languages")
 local utils = require("neocoderunner.utils")
@@ -66,22 +65,23 @@ local M = {}
 --- Gets the default run command for the current file
 ---@return Runner | nil
 M.get_run_command = function()
-    local fi = utils.get_current_file_info()
-    local lang = languages[fi.type]
+    local file_info = utils.get_current_file_info()
+    local lang = languages[file_info.type]
 
     if not lang or not lang.runner then
         vim.notify(
-            ("No runner configured for filetype: %s"):format(fi.type or "unknown"),
+            ("No runner configured for filetype: %s"):format(file_info.type or "unknown"),
             vim.log.levels.WARN
         )
         return nil
     end
 
-    if config.default_runners ~= nil and config.default_runners[lang] ~= nil then
-        return utils.normalise_runner(config.default_runners[lang])
+    local config = require("neocoderunner").config
+    if config.default_runners ~= nil and config.default_runners[file_info.type] ~= nil then
+        return utils.normalise_runner(config.default_runners[file_info.type])
     end
 
-    return utils.normalise_runner(lang.runner(fi.fullpath, fi.basename))
+    return utils.normalise_runner(lang.runner(file_info.fullpath, file_info.basename))
 end
 
 --- Adds the code snippet to a temp file and returns the command needed to run this temp file

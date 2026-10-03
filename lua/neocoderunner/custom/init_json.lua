@@ -1,7 +1,5 @@
 local languages = require("neocoderunner.default.languages")
 local utils = require("neocoderunner.utils")
-local config = require("neocoderunner").config
-local default_runners = config.default_runners
 
 require("neocoderunner.types.Runner")
 
@@ -61,6 +59,7 @@ local function get_file_contents()
     },
 ]]
     local parts = {}
+    local default_runners = require("neocoderunner").config.default_runners
     for _, name in ipairs(languages.order) do
         local runner = nil
         if default_runners ~= nil and default_runners[name] ~= nil then
