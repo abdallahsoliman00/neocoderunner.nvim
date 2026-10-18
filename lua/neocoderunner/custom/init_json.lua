@@ -60,12 +60,12 @@ local function get_file_contents()
 ]]
     local parts = {}
     local default_runners = require("neocoderunner").config.default_runners
-    for _, name in ipairs(languages.order) do
+    for _, name in ipairs(utils.get_runner_names(default_runners)) do
         local runner = nil
         if default_runners ~= nil and default_runners[name] ~= nil then
             runner = utils.to_runner(default_runners[name])
         end
-        if runner == nil then
+        if runner == nil and languages[name] ~= nil then
             runner = utils.to_runner(languages[name].runner("${filePath}", "${fileName}"))
         end
         table.insert(parts, write_runner_as_json(name, runner))

@@ -3,6 +3,8 @@ require("neocoderunner.types.Runner")
 local languages = require("neocoderunner.default.languages")
 local utils = require("neocoderunner.utils")
 
+local sep = vim.o.shell:lower():find("powershell") and " ; " or " && "
+
 local tempfile_name = "neocoderunner_tempfile"
 local temp_root = vim.fn.stdpath("cache") .. "/neocoderunner"
 
@@ -30,10 +32,10 @@ local function make_tempdir()
 end
 
 ---@param dir string
----@param lang Language
+---@param ext string File extension (without the leading dot)
 ---@return string
-local function get_tempfile_path(dir, lang)
-    return dir .. "/" .. tempfile_name .. "." .. lang.extensions[1]
+local function get_tempfile_path(dir, ext)
+    return dir .. "/" .. tempfile_name .. "." .. ext
 end
 
 -- Reclaim orphaned temp directories from previous (crashed) sessions.
@@ -88,17 +90,33 @@ end
 ---@return string | nil cmd
 ---@return string | nil tempdir Directory the command must run from, deleted after the run
 M.get_code_snippet_run_command = function()
-    ---@type string
     local ft = vim.bo.filetype
     local lang = languages[ft]
-    if not lang or not lang.runner then
+
+    local config = require("neocoderunner").config
+    local default_runner = config.default_runners and config.default_runners[ft]
+
+    if (not lang or not lang.runner) and default_runner == nil then
         vim.notify(
             ("No runner configured for filetype: %s"):format(ft or "unknown"),
             vim.log.levels.WARN
         )
         return nil
     end
-    local runner = lang.runner
+
+    -- Resolve the configured runner up front so a malformed entry doesn't
+    -- leave an orphaned temp directory behind.
+    local configured
+    if default_runner ~= nil then
+        configured = utils.to_runner(default_runner)
+        if configured == nil then
+            vim.notify(
+                ("Invalid default runner for filetype: %s"):format(ft or "unknown"),
+                vim.log.levels.WARN
+            )
+            return nil
+        end
+    end
 
     -- Get highlighted selection
     local selection = utils.get_visual_selection()
@@ -107,8 +125,16 @@ M.get_code_snippet_run_command = function()
         return nil
     end
 
+    -- Prefer the built-in extension when the language is known (preserving the
+    -- existing behaviour). Otherwise fall back to the current buffer's
+    -- extension, or the filetype, so default_runners-only filetypes still run.
+    local ext = (lang and lang.extensions and lang.extensions[1]) or vim.fn.expand("%:e")
+    if ext == "" then
+        ext = ft
+    end
+
     local tempdir = make_tempdir()
-    local tempfile_path = get_tempfile_path(tempdir, lang)
+    local tempfile_path = get_tempfile_path(tempdir, ext)
 
     -- Write selection to file
     local file, err = io.open(tempfile_path, "w")
@@ -121,7 +147,7 @@ M.get_code_snippet_run_command = function()
 
     -- Verify that the language has headers defined
     -- TODO: Could similar logic be used to include required modules for a copied snippet?
-    if lang.headers then
+    if lang and lang.headers then
         for _, header in pairs(lang.headers) do
             -- If the header is not already in the selection, add it to the top of the file
             if not selection:find(header, 1, true) then
@@ -132,8 +158,25 @@ M.get_code_snippet_run_command = function()
 
     file:write(selection)
     file:close()
+
+    -- A runner configured through default_runners takes priority so that
+    -- overrides and brand-new filetypes behave the same as full-file runs.
+    if configured ~= nil then
+        local replacements = {
+            fileName = tempfile_name,
+            filePath = tempfile_path,
+            cwd = vim.fn.getcwd(),
+        }
+        local run_cmd = utils.resolve_placeholders(configured.run, replacements)
+        if configured.build and configured.build ~= "" then
+            local build_cmd = utils.resolve_placeholders(configured.build, replacements)
+            return build_cmd .. sep .. run_cmd, tempdir
+        end
+        return run_cmd, tempdir
+    end
+
     -- Get command to run temp file
-    return runner(tempfile_path, tempfile_name), tempdir
+    return lang.runner(tempfile_path, tempfile_name), tempdir
 end
 
 --- Deletes the temp directory used by a single snippet run

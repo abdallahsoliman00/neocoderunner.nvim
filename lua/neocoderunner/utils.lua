@@ -350,5 +350,24 @@ M.to_runner  = function(raw)
     return nil
 end
 
+--- Returns every known runner name: the built-in language order first, followed
+--- by any filetype defined only in `default_runners` (appended alphabetically).
+--- This lets `default_runners` introduce filetypes the plugin doesn't ship.
+---@param default_runners table<string, any>|nil
+---@return string[]
+M.get_runner_names = function(default_runners)
+    local languages = require("neocoderunner.default.languages")
+
+    local extras = {}
+    for name in pairs(default_runners or {}) do
+        if not vim.tbl_contains(languages.order, name) then
+            table.insert(extras, name)
+        end
+    end
+    table.sort(extras)
+
+    return vim.list_extend(vim.deepcopy(languages.order), extras)
+end
+
 
 return M

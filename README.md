@@ -107,7 +107,7 @@ use({
     -- How much of the existing window the neocoderunner terminal will occupy
     terminal_footprint = 0.33,
 
-    -- Overrides for the built-in runners.
+    -- Runners for each filetype
     -- See examples of the different ways to configure the default runner.
     default_runners = {
         -- tex = { "latexmk -pdf ${filePath}" }
@@ -242,6 +242,10 @@ When you run a command, the plugin resolves the runner in this order:
 3. **Built-in default**: Fall back to the plugin's hardcoded default runner for that filetype.
 
 If no runner exists at any level, a warning is shown.
+
+The plugin's built-in defaults can be extended (or overridden) from your setup through the
+[`default_runners`](#default-plugin-configuration) option. Keys are Neovim filetypes, so you can define runners
+for languages the plugin doesn't ship with.
 
 ## Contributing
 I haven't yet added runner commands for all languages, but the most commonly used ones (that don't have a complicated build system) are supported.
