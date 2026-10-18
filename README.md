@@ -66,6 +66,7 @@ If your project has a more involved build pipeline, continue reading below.
     opts = {
         terminal_position = "bottom",
         terminal_footprint = 0.33,
+        default_runners = {}
     },
     keys = {
         -- Easy run with keymaps (optional)
@@ -85,6 +86,7 @@ use({
         require("neocoderunner").setup({
             terminal_position = "bottom",
             terminal_footprint = 0.33,
+            default_runners = {}
         })
         -- Easy run with keymap (optional)
         vim.keymap.set("n", "<C-S-B>", ":NCRunnerBuild<CR>", { silent = true, noremap = true })
@@ -104,6 +106,17 @@ use({
 
     -- How much of the existing window the neocoderunner terminal will occupy
     terminal_footprint = 0.33,
+
+    -- Overrides for the built-in runners.
+    -- See examples of the different ways to configure the default runner.
+    default_runners = {
+        -- tex = { "latexmk -pdf ${filePath}" }
+        -- c = "clang -o ${fileName} ${filePath} && ./${fileName}"
+        -- cpp = {
+        --     build = "clang++ -o ${fileName} ${filePath}",
+        --     run = "./${fileName}"
+        -- }
+    },
 }
 ```
 

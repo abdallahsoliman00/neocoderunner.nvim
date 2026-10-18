@@ -68,17 +68,17 @@ M.get_run_command = function()
     local file_info = utils.get_current_file_info()
     local lang = languages[file_info.type]
 
+    local config = require("neocoderunner").config
+    if config.default_runners ~= nil and config.default_runners[file_info.type] ~= nil then
+        return utils.normalise_runner(config.default_runners[file_info.type])
+    end
+
     if not lang or not lang.runner then
         vim.notify(
             ("No runner configured for filetype: %s"):format(file_info.type or "unknown"),
             vim.log.levels.WARN
         )
         return nil
-    end
-
-    local config = require("neocoderunner").config
-    if config.default_runners ~= nil and config.default_runners[file_info.type] ~= nil then
-        return utils.normalise_runner(config.default_runners[file_info.type])
     end
 
     return utils.normalise_runner(lang.runner(file_info.fullpath, file_info.basename))
